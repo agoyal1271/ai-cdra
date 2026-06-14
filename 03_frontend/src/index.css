@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; margin: 0; padding: 0; }
+
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                 'Inter', 'Segoe UI', sans-serif;
+    font-size: 0.875rem;   /* 14px base — no shrinking below 12px anywhere */
+    background-color: #0B1520;
+    color: #c8d8e8;        /* near-white with blue tint */
+  }
+
+  /* Scrollbars — Cloudera style */
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: #1e3a55; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2a4f72; }
+
+  /* Remove all text-[Npx] antipatterns — enforce Tailwind scale floor */
+  .text-xs { font-size: 0.75rem !important; }  /* 12px hard floor */
+}
+
+@layer utilities {
+  /* Cloudera blue focus ring for interactive elements */
+  .focus-cdp:focus {
+    outline: 2px solid #0088CC;
+    outline-offset: 2px;
+  }
+  /* Left-border selection indicator */
+  .selected-row {
+    border-left: 2px solid #0088CC;
+    background-color: rgba(0, 136, 204, 0.08);
+  }
+}

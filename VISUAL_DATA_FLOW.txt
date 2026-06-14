@@ -1,0 +1,330 @@
+================================================================================
+TMO-NOK DATA FLOW: Raw Counters → Hierarchical Aggregation → KPIs & Actions
+================================================================================
+
+EXAMPLE: RRC Connection Setup Success Rate for Cell 123 (15:00-15:15 UTC)
+
+================================================================================
+LAYER 1: BRONZE (Raw Nokia Counters)
+================================================================================
+
+Cell 123 @ New York, 5G-n77, Carrier 001
+┌──────────────────────────────────────────────────────────────────┐
+│ Raw Counters (15-min window: 15:00-15:15)                       │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ Request Counters:                    Rejection Counters:        │
+│ ├─ MO Data Requests:  4,250          ├─ Data Capacity Reject: 320 │
+│ ├─ Signalling Req:    1,820          ├─ Coding Issue Reject:   85 │
+│ ├─ VoNR Requests:       890          ├─ Hi-Pri Reject:         15 │
+│ ├─ Emergency Req:        45          └─ Other Reject:         180 │
+│ └─ Other:             1,995                                      │
+│ ════════════════════════════          ════════════════════════   │
+│ TOTAL REQUESTS:       9,000          TOTAL REJECTIONS:       600 │
+│                                                                  │
+│ Success Counter:                                                │
+│ └─ RRC_STPSUCC_TOT:   8,400                                    │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+         ↓ (Normalize & Aggregate by hierarchy)
+
+
+================================================================================
+LAYER 2: SILVER (Measurements Across Hierarchy Levels)
+================================================================================
+
+Level 1: CELL DETAIL (Finest Granularity)
+┌──────────────────────────────────────────────────────────────────────┐
+│ AREA=US-EAST | SPECTRUM=5G-n77 | CARRIER=CARRIER_001 | CELL=123      │
+├──────────────────────────────────────────────────────────────────────┤
+│ M102 - RRC Connection Setup                                          │
+│ ├─ RRC_SETUP_ATTEMPTS         = 9,000                               │
+│ ├─ RRC_SETUP_SUCCESSES        = 8,400                               │
+│ ├─ RRC_SETUP_REJECTIONS       = 600                                 │
+│ ├─ RRC_SETUP_SUCCESS_RATE     = 93.33% ⚠️ (SLA: 95%)               │
+│ └─ REJECTION_RATE_BY_CAPACITY = 3.56%  ❌ (SLA: 2.0%)               │
+└──────────────────────────────────────────────────────────────────────┘
+                    ↓ (Aggregation: SUM across cells)
+
+
+Level 2: CARRIER (Remove CELL dimension)
+┌──────────────────────────────────────────────────────────────────────┐
+│ AREA=US-EAST | SPECTRUM=5G-n77 | CARRIER=CARRIER_001 | CELL=NULL    │
+├──────────────────────────────────────────────────────────────────────┤
+│ Aggregated across cells 123, 124, 125                                │
+│ M102 - RRC Connection Setup                                          │
+│ ├─ RRC_SETUP_ATTEMPTS         = 27,150 (9000+9200+8950)             │
+│ ├─ RRC_SETUP_SUCCESS_RATE     = 93.18% (avg across cells)          │
+│ └─ [Other aggregated metrics]                                        │
+└──────────────────────────────────────────────────────────────────────┘
+                    ↓ (Aggregation: SUM across carriers)
+
+
+Level 3: SPECTRUM (Remove CARRIER dimension)
+┌──────────────────────────────────────────────────────────────────────┐
+│ AREA=US-EAST | SPECTRUM=5G-n77 | CARRIER=NULL | CELL=NULL           │
+├──────────────────────────────────────────────────────────────────────┤
+│ Aggregated across CARRIER_001 and CARRIER_002                        │
+│ M102 - RRC Connection Setup                                          │
+│ ├─ RRC_SETUP_ATTEMPTS         = 55,000 (27150+27850)                │
+│ ├─ RRC_SETUP_SUCCESS_RATE     = 93.16% (weighted avg)              │
+│ └─ [Spectrum-level insights]                                         │
+└──────────────────────────────────────────────────────────────────────┘
+                    ↓ (Aggregation: SUM across spectra)
+
+
+Level 4: AREA (Top Level - Remove SPECTRUM dimension)
+┌──────────────────────────────────────────────────────────────────────┐
+│ AREA=US-EAST | SPECTRUM=NULL | CARRIER=NULL | CELL=NULL             │
+├──────────────────────────────────────────────────────────────────────┤
+│ Aggregated across all spectra (5G-n77, 5G-n28, LTE-B2, etc.)        │
+│ M102 - RRC Connection Setup                                          │
+│ ├─ RRC_SETUP_ATTEMPTS         = 110,000                             │
+│ ├─ RRC_SETUP_SUCCESS_RATE     = 92.95% ⚠️ (SLA: 95%)                │
+│ └─ REGIONAL SLA STATUS: WARNING                                      │
+└──────────────────────────────────────────────────────────────────────┘
+         ↓ (KPI Calculation & SLA Check)
+
+
+================================================================================
+LAYER 3: GOLD (KPIs, Alerts, Business Logic)
+================================================================================
+
+Daily SLA Tracking (date=2026-05-18)
+┌──────────────────────────────────────────────────────────────────────┐
+│ KPI: RRC_Setup_Success_Rate @ Cell 123                               │
+│ ├─ Current Value:   93.33%      ← Latest 15-min period              │
+│ ├─ SLA Target:      95.00%                                           │
+│ ├─ Status:          ⚠️ WARNING (below threshold)                    │
+│ │                                                                    │
+│ ├─ Daily Statistics:                                                 │
+│ │ ├─ Busy Hour (Worst 15m): 92.50%                                  │
+│ │ ├─ Daily Average:         93.45%                                  │
+│ │ ├─ Daily Peak:            95.20%                                  │
+│ │ └─ Daily Low:             91.80%                                  │
+│ │                                                                    │
+│ ├─ Trend Analysis:                                                   │
+│ │ ├─ Yesterday:   94.20%                                            │
+│ │ ├─ Trend:       ↓ DOWN (0.87 point drop)                          │
+│ │ ├─ 7-day Avg:   93.58%                                            │
+│ │ └─ Direction:   DEGRADING (consistent decline)                    │
+│ │                                                                    │
+│ └─ Business Impact:                                                  │
+│     ~600 users affected per 15-min = 2,400 users/hour = ~57,600    │
+│     Estimated lost session value: ~$2,400/day                       │
+└──────────────────────────────────────────────────────────────────────┘
+
+Root Cause Analysis (Drill-down into Rejection Reasons)
+┌──────────────────────────────────────────────────────────────────────┐
+│ KPI: RRC_Rejection_Rate_By_Cause @ Cell 123                          │
+│                                                                       │
+│ Breakdown of 600 total rejections:                                   │
+│                                                                       │
+│ ├─ Capacity-Based Rejection:    320  (53.3%)  ❌ CRITICAL           │
+│ │  └─ Rate: 3.56% of data requests / SLA: 2.0%                      │
+│ │  └─ Meaning: Cell is running out of PRBs (radio resources)        │
+│ │                                                                    │
+│ ├─ Modulation/Coding Mismatch:   85  (14.2%)  ⚠️ WARNING           │
+│ │  └─ Rate: 1.88% / SLA: 1.0%                                       │
+│ │  └─ Meaning: Signal too weak to use high data rates               │
+│ │                                                                    │
+│ ├─ High-Priority Access Block:   15  (2.5%)   ✅ OK                │
+│ │  └─ Rate: 0.33% (normal for priority handling)                    │
+│ │                                                                    │
+│ └─ Other/Unknown:               180  (30.0%)  ⚠️ REVIEW            │
+│    └─ Needs investigation                                            │
+│                                                                       │
+│ PRIMARY ISSUE: Cell is capacity-constrained                         │
+└──────────────────────────────────────────────────────────────────────┘
+
+Capacity Headroom Analysis
+┌──────────────────────────────────────────────────────────────────────┐
+│ From silver_tmononk_measurements - PRB Utilization metrics            │
+│                                                                       │
+│ DL (Downlink) Capacity:                                              │
+│ ├─ Total PRBs available per slot:  273 PRBs                         │
+│ ├─ PRBs currently used:            213 PRBs (78%)                   │
+│ ├─ PRBs available:                  60 PRBs (22%)  ← Only 22% spare │
+│ └─ Status: ⚠️ HIGH UTILIZATION (SLA target: keep >25% spare)        │
+│                                                                       │
+│ UL (Uplink) Capacity:                                                │
+│ ├─ Total PRBs available:           273 PRBs                         │
+│ ├─ PRBs currently used:            198 PRBs (73%)                   │
+│ ├─ PRBs available:                  75 PRBs (27%)  ← Within SLA    │
+│ └─ Status: ✅ OK (still <75% utilized)                              │
+│                                                                       │
+│ Bottleneck: DOWNLINK (DL) is the constraint!                        │
+└──────────────────────────────────────────────────────────────────────┘
+
+         ↓ (Alert Generation & Automation)
+
+
+================================================================================
+LAYER 4: AUTONOMOUS AGENTS (MCP-based Actions)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🤖 AGENT: SLA_Monitor                                              │
+│ Trigger: Hourly check of gold_tmononk_kpis table                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│ Query:                                                              │
+│   SELECT * FROM gold_tmononk_kpis                                  │
+│   WHERE kpi_status IN ('WARNING', 'CRITICAL')                      │
+│   AND date = TODAY()                                               │
+│                                                                     │
+│ Result Found: Cell 123, RRC Success Rate = 93.33% (SLA: 95%)      │
+│                                                                     │
+│ Actions Taken:                                                      │
+│  ✅ Send Slack to #5g-network-ops:                                │
+│     "🚨 Cell 123 RRC SLA Breach: 93.33% (target 95%)"             │
+│     "Root cause: 3.56% capacity rejections (SLA 2%)"              │
+│     "Action: Check PRB utilization & trigger load balancing"      │
+│                                                                     │
+│  ✅ Create PagerDuty Incident (Medium):                           │
+│     Title: "Cell 123 Capacity Constraint - RRC SLA Breach"        │
+│     Assigned to: On-call network engineer                         │
+│     Urgency: Medium (trending down, needs 24-hour action)         │
+│                                                                     │
+│  ✅ Fetch diagnostic data:                                         │
+│     - Pull adjacent cell (124, 125) metrics for load-shift option  │
+│     - Check last 24 hours of PRB trending                         │
+│     - Compare to baseline (7-day rolling avg)                     │
+│                                                                     │
+│  ✅ Generate auto-report:                                          │
+│     File: "Cell_123_SLA_Analysis_2026-05-18_1515.pdf"            │
+│     Content: Visual dashboard + trend charts + root cause        │
+│     Distribution: Slack → ops team, email → manager              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🤖 AGENT: Anomaly_Detector                                         │
+│ Trigger: Hourly on bronze_tmononk_counters (streaming ingestion)   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│ Baseline (7-day rolling):                                           │
+│   ├─ RRC Attempts: avg 8,200 ± 900 (std dev)                      │
+│   └─ Rejection Rate: avg 6.4% ± 1.2%                              │
+│                                                                     │
+│ Current Hour (15:00-15:15):                                         │
+│   ├─ RRC Attempts: 9,000 (+9.8% anomaly)   [1.09 std dev]         │
+│   └─ Rejection Rate: 6.7% (+0.3 pp anomaly) [0.25 std dev]        │
+│                                                                     │
+│ Analysis: Slight traffic surge, not unusual                        │
+│ Status: ✅ NORMAL (within 1.5 std dev threshold)                   │
+│                                                                     │
+│ However, combining with SLA alert:                                │
+│  → Network is normally at 6.4% rejection but struggling with       │
+│     added load (even small +0.3pp surge causes SLA breach)         │
+│  → Confirms: CAPACITY IS THE BOTTLENECK                            │
+│                                                                     │
+│ Action: ✅ Flag for Capacity Planner Agent                         │
+│         (priority: schedule hardware expansion within 2 weeks)     │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🤖 AGENT: Capacity_Planner                                         │
+│ Trigger: Daily (00:00 UTC) on gold_tmononk_kpis 30-day history    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│ Analysis: 30-day trend of Cell 123 metrics                         │
+│                                                                     │
+│ ┌─────────────────────────────────────────────────────────────┐  │
+│ │ PRB Utilization Trend (Last 30 Days):                      │  │
+│ │                                                             │  │
+│ │ 80% │         ╱─────────                                  │  │
+│ │ 75% │      ╱╱                                             │  │
+│ │ 70% │    ╱╱          (Apr 18: 62%)  → (May 18: 78%)      │  │
+│ │ 65% │  ╱╱                                                 │  │
+│ │ 60% │╱────────────────────────────────────────────────  │  │
+│ │     └────────────────────────────────────────────────────│  │
+│ │     Apr 18     Apr 25     May 2      May 9      May 18   │  │
+│ │     Growth Rate: +0.53% per day                          │  │
+│ │     Projected Saturation (95%): 2026-06-15 (28 days)    │  │
+│ └─────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│ Forecast:                                                       │
+│  ├─ If trend continues:                                       │
+│  │  └─ Cell will saturate in 28 days (2026-06-15)            │
+│  ├─ Impact: SLA breaches daily, users experience degradation  │
+│  └─ Recommendation: Hardware expansion by 2026-06-01 (2-week) │
+│                                                                 │
+│ Actions:                                                        │
+│  ✅ Create PagerDuty Epic: "Q2-2026 5G-n77 Expansion"         │
+│  ✅ Generate procurement request:                             │
+│     - Hardware: Nokia AirScale 5G RAN (cost: $500K)          │
+│     - Timeline: 2-week delivery + 1-week installation         │
+│     - Expected capacity gain: +40% (from 273 to ~380 PRBs)   │
+│  ✅ Calculate ROI:                                             │
+│     - Current lost revenue: ~$2,400/day (600 rejections)      │
+│     - Annualized loss: $876K (without fix)                    │
+│     - Hardware cost: $500K + $100K integration                │
+│     - ROI: 6.7 months payback period                          │
+│     - Business case: ✅ STRONG (approve immediately!)        │
+│                                                                 │
+│  ✅ Send report to C-level:                                    │
+│     Subject: "Northeast Region 5G Capacity Expansion Approved" │
+│     Action: CRQ (Change Request) #2026-0518-CAP-1             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+         ↓ (Human Decision / Escalation)
+
+
+================================================================================
+LAYER 5: BUSINESS DECISION & EXECUTION
+================================================================================
+
+On-Call Network Engineer receives alerts:
+├─ Slack notification (SLA_Monitor_Agent @ 15:30 UTC)
+├─ PagerDuty incident (Medium priority)
+└─ Auto-report attachment (Cell_123_SLA_Analysis_...)
+
+Engineer actions:
+├─ ✅ Reads analysis: Capacity-driven rejections (3.56% vs SLA 2%)
+├─ ✅ Checks adjacent cells: 124 has spare capacity (18%), 125 has spare (22%)
+├─ ✅ Enables load-balancing rule:
+│  └─ "Shift 15% of data traffic from Cell 123 to Cells 124/125"
+└─ ✅ Monitors result: SLA improves to 94.8% within 1 hour ✅
+
+Management reviews Capacity_Planner_Agent forecast:
+├─ ✅ Approves hardware expansion (CRQ #2026-0518-CAP-1)
+├─ ✅ Fast-tracks procurement (2-week delivery)
+└─ ✅ Schedules installation for 2026-06-01
+
+Result (3 days later):
+├─ Load balancing holds SLA at 94-95% range temporarily
+├─ Hardware arrives 2026-06-01 as planned
+├─ PRB capacity expanded from 273 → 380 per slot (+39%)
+├─ Cell 123 SLA rebounds to 96.5% (above target)
+└─ Revenue protection: Saved $150K+ through early action
+
+
+================================================================================
+KEY INSIGHT: CMM-Style Hierarchy in Action
+================================================================================
+
+The example shows how a single "problem" (high RRC rejection rate at Cell 123)
+ripples through the system:
+
+  Raw Counter (9,000 requests)
+    ↓
+  Cell-Level KPI (93.33% success rate ⚠️ WARNING)
+    ↓
+  Root Cause Analysis (3.56% capacity-based rejections ❌ CRITICAL)
+    ↓
+  Drill-Down Hierarchy (Carrier → Spectrum → Area to find extent)
+    ↓
+  Business Impact ($2,400/day revenue loss)
+    ↓
+  Autonomous Agent Detection (SLA_Monitor, Anomaly_Detector, Capacity_Planner)
+    ↓
+  Human Decision & Action (Load balancing + hardware procurement)
+    ↓
+  Resolution & Cost Recovery (SLA restored, revenue protected)
+
+This is exactly how CMM-23.5's hierarchical metadata design enables
+operational excellence: from raw counters to business outcomes.
+

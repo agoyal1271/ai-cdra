@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cloudera AI Agents — Overview</title>
+<style>
+  :root {
+    --cdp-950: #0B1520;
+    --cdp-900: #102030;
+    --cdp-800: #162840;
+    --cdp-700: #1e3a55;
+    --cdp-600: #3a5a78;
+    --cloudera: #0088CC;
+    --cloudera-bright: #1AA3E6;
+    --text:     #c8d8e8;
+    --text-mut: #6a8fa8;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red:   #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cdp-950);
+    color: var(--text);
+    font-family: Inter, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 24px;
+  }
+  .slide {
+    width: min(1200px, 100%);
+    min-height: 720px;
+    background: linear-gradient(180deg, var(--cdp-900) 0%, var(--cdp-950) 100%);
+    border: 1px solid var(--cdp-700);
+    border-radius: 14px;
+    padding: 48px 56px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    page-break-after: always;
+  }
+  .slide:last-child { page-break-after: auto; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(0,136,204,0.12);
+    border: 1px solid rgba(0,136,204,0.45);
+    color: var(--cloudera-bright);
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 999px; font-weight: 600;
+  }
+  .slide-no {
+    color: var(--text-mut);
+    font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; margin-left: auto;
+  }
+  .slide-head {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  h1 {
+    font-size: 36px; font-weight: 700; line-height: 1.15;
+    color: #fff; letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+  h1 .accent { color: var(--cloudera-bright); }
+  h2 {
+    font-size: 22px; font-weight: 600; color: #fff;
+    margin: 28px 0 14px;
+  }
+  .sub {
+    font-size: 17px; color: var(--text-mut); max-width: 880px; line-height: 1.55;
+  }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li {
+    display: flex; gap: 14px; align-items: flex-start; padding: 10px 0;
+    border-bottom: 1px dashed rgba(106,143,168,0.18);
+  }
+  li::before {
+    content: ""; flex-shrink: 0;
+    width: 8px; height: 8px; margin-top: 8px;
+    background: var(--cloudera); border-radius: 50%;
+    box-shadow: 0 0 12px rgba(0,136,204,0.7);
+  }
+  li b { color: #fff; font-weight: 600; }
+  li span.mut { color: var(--text-mut); }
+
+  /* Slide 1 — hero */
+  .hero {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+  }
+  .hero h1 { font-size: 52px; max-width: 900px; }
+  .hero .sub { font-size: 19px; margin-top: 18px; }
+  .pillars {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px;
+  }
+  .pillar {
+    background: var(--cdp-800); border: 1px solid var(--cdp-700);
+    border-radius: 10px; padding: 18px 20px;
+  }
+  .pillar h3 {
+    font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--cloudera-bright); font-weight: 700; margin-bottom: 8px;
+  }
+  .pillar p { font-size: 14px; color: var(--text); line-height: 1.5; }
+
+  /* Slide 2 — agent grid */
+  .agent-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; flex: 1;
+  }
+  .agent {
+    background: var(--cdp-800); border: 1px solid var(--cdp-700);
+    border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column;
+  }
+  .agent-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .agent-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: rgba(0,136,204,0.15);
+    color: var(--cloudera-bright);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700;
+  }
+  .agent h3 { color: #fff; font-size: 15px; font-weight: 600; }
+  .agent .tag {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-mut); margin-top: 1px;
+  }
+  .agent p {
+    font-size: 13px; color: var(--text); line-height: 1.45; margin-top: 8px; flex: 1;
+  }
+  .agent .pattern {
+    margin-top: 10px; font-size: 11px; color: var(--cloudera-bright);
+    border-top: 1px dashed rgba(106,143,168,0.25); padding-top: 8px;
+  }
+
+  /* Slide 3 — demo & status */
+  .two-col {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 28px; flex: 1; margin-top: 16px;
+  }
+  .col h2 { margin-top: 0; }
+  .stack {
+    background: var(--cdp-800); border: 1px solid var(--cdp-700);
+    border-radius: 10px; padding: 16px 18px; margin-top: 12px;
+  }
+  .stack h4 {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--cloudera-bright); margin-bottom: 8px; font-weight: 700;
+  }
+  .stack p { font-size: 13.5px; color: var(--text); line-height: 1.55; }
+  .stack code {
+    color: #fff; background: var(--cdp-950);
+    padding: 1px 6px; border-radius: 4px; font-size: 12px;
+    border: 1px solid var(--cdp-700);
+  }
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .pill {
+    background: var(--cdp-950); border: 1px solid var(--cdp-700);
+    color: var(--text); font-size: 12px; padding: 4px 10px; border-radius: 999px;
+  }
+  .pill.good { color: var(--green); border-color: rgba(74,222,128,0.4); }
+  .pill.warn { color: var(--amber); border-color: rgba(251,191,36,0.4); }
+
+  .footer {
+    margin-top: 24px; display: flex; justify-content: space-between;
+    color: var(--text-mut); font-size: 12px;
+  }
+
+  @media print {
+    body { background: #fff; padding: 0; gap: 0; }
+    .slide {
+      width: 100%; min-height: 100vh; border: 0; border-radius: 0;
+      box-shadow: none; padding: 40px 56px;
+      background: var(--cdp-950);
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ───────── Slide 1 — What it is ───────── -->
+<section class="slide">
+  <div class="slide-head">
+    <span class="badge">▣ Cloudera AI Agents</span>
+    <span class="slide-no">1 / 3</span>
+  </div>
+
+  <div class="hero">
+    <h1>Six autonomous agents that <span class="accent">discover, build, and govern</span> your Cloudera data — end to end.</h1>
+    <p class="sub">
+      A lightweight FastAPI + React platform that turns a sprawling Kafka/Iceberg/Ozone estate into a
+      curated, governed, pipeline-ready inventory. Every agent logs every decision with reasoning for
+      compliance and self-learning, with zero compute in the container — all heavy lifting runs on
+      Impala, Trino, Spark, or NiFi.
+    </p>
+
+    <div class="pillars">
+      <div class="pillar">
+        <h3>Autonomous</h3>
+        <p>Each agent acts without prompting — self-healing retry queues, auto-classification, threshold tuning from accuracy trends.</p>
+      </div>
+      <div class="pillar">
+        <h3>Transparent</h3>
+        <p>Every LLM call, every match, every decision is captured as an SSE event and stored as a Markdown + JSON decision log.</p>
+      </div>
+      <div class="pillar">
+        <h3>Cloudera-native</h3>
+        <p>Knox JWT auto-refresh, REST Catalog, Schema Registry, Ozone S3A, and a NiFi flow generator that emits real importable JSON.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>FastAPI :8000 · Vite :5173 · Ollama-backed LLM</span>
+    <span>github / internal · v1.0</span>
+  </div>
+</section>
+
+<!-- ───────── Slide 2 — The six agents ───────── -->
+<section class="slide">
+  <div class="slide-head">
+    <span class="badge">▣ Agent fleet</span>
+    <span class="slide-no">2 / 3</span>
+  </div>
+  <h1>Six agents, <span class="accent">six agentic patterns</span></h1>
+  <p class="sub">Different patterns for different jobs — minimal LLM cost where rules suffice, full reasoning where it pays off.</p>
+
+  <div class="agent-grid" style="margin-top: 28px;">
+    <div class="agent">
+      <div class="agent-head">
+        <span class="agent-icon">◉</span>
+        <div><h3>Source Scout</h3><div class="tag">AUTO-DISCOVER</div></div>
+      </div>
+      <p>Scans Kafka topics and Iceberg tables, profiles schemas, flags PII, and suggests an ingestion pipeline per source.</p>
+      <div class="pattern">Pattern · ReAct (LLM-driven reasoning loop)</div>
+    </div>
+
+    <div class="agent">
+      <div class="agent-head">
+        <span class="agent-icon">⚒</span>
+        <div><h3>Pipeline Builder</h3><div class="tag">AUTO-CONFIG</div></div>
+      </div>
+      <p>Takes a discovered source + chosen sink and emits a real NiFi 1.x flow-definition JSON — importable into NiFi.</p>
+      <div class="pattern">Pattern · Tool-Use (deterministic generator)</div>
+    </div>
+
+    <div class="agent">
+      <div class="agent-head">
+        <span class="agent-icon">✓</span>
+        <div><h3>Quality Guardian</h3><div class="tag">REAL-TIME QA</div></div>
+      </div>
+      <p>Scores completeness, uniqueness, freshness; auto-remediates quarantine for confident violations.</p>
+      <div class="pattern">Pattern · Evaluator (rules + thresholds)</div>
+    </div>
+
+    <div class="agent">
+      <div class="agent-head">
+        <span class="agent-icon">♥</span>
+        <div><h3>Pipeline Healer</h3><div class="tag">SELF-HEALING</div></div>
+      </div>
+      <p>Watches consumer lag + job state, diagnoses root cause, auto-heals or escalates with retry-queued notifications.</p>
+      <div class="pattern">Pattern · Reactive (state machine)</div>
+    </div>
+
+    <div class="agent">
+      <div class="agent-head">
+        <span class="agent-icon">⌖</span>
+        <div><h3>Semantic Mapper</h3><div class="tag">NL → METRICS</div></div>
+      </div>
+      <p>Embeds raw field names into a business semantic model; detects conflicts and suggests aggregations.</p>
+      <div class="pattern">Pattern · Intelligence (embeddings + similarity)</div>
+    </div>
+
+    <div class="agent">
+      <div class="agent-head">
+        <span class="agent-icon">§</span>
+        <div><h3>Metadata Curator</h3><div class="tag">AUTO-GOVERN</div></div>
+      </div>
+      <p>LLM-driven discovery + per-table sensitivity classification, owner assignment, retention &amp; access policy.</p>
+      <div class="pattern">Pattern · Policy Engine + LLM</div>
+    </div>
+  </div>
+
+  <div class="footer" style="margin-top: 14px;">
+    <span>Each agent ~200–300 lines · shared <code style="background:none;color:var(--text-mut)">BaseAgent</code> + <code style="background:none;color:var(--text-mut)">decision_store</code></span>
+    <span>Built for Cloudera CDP · works on local + CDSW</span>
+  </div>
+</section>
+
+<!-- ───────── Slide 3 — Demo / what's new ───────── -->
+<section class="slide">
+  <div class="slide-head">
+    <span class="badge">▣ Live demo highlights</span>
+    <span class="slide-no">3 / 3</span>
+  </div>
+
+  <h1>What we can <span class="accent">show today</span></h1>
+  <p class="sub">A few flows that are wired end-to-end and visible in the UI right now.</p>
+
+  <div class="two-col">
+    <div class="col">
+      <h2>Pipeline Builder · real NiFi flow JSON</h2>
+      <div class="stack">
+        <h4>Source × Sink combinations</h4>
+        <p>
+          Source: <code>kafka_topic</code> or <code>iceberg_table</code> (Ozone-backed).<br/>
+          Sink: <code>adls_iceberg</code> · <code>adls_delta</code> · <code>snowflake</code>.
+        </p>
+        <div class="pill-row">
+          <span class="pill">ConsumeKafkaRecord_2_6</span>
+          <span class="pill">PutIceberg</span>
+          <span class="pill">PutAzureDataLakeStorage</span>
+          <span class="pill">PutSnowflakeInternalStage</span>
+        </div>
+      </div>
+      <div class="stack">
+        <h4>Output</h4>
+        <p>Downloadable <code>.flow.json</code> with real processor classes, real property keys, and a Parameter Context binding all secrets — operator just clicks <em>Upload Flow Definition</em> in NiFi.</p>
+      </div>
+    </div>
+
+    <div class="col">
+      <h2>Metadata Curator · LLM-driven discovery</h2>
+      <div class="stack">
+        <h4>Smarter table matching</h4>
+        <p>Previously, "tables with geolocation" returned every PII-shaped table. Now a single LLM call cites the actual columns — no hardcoded synonym dictionaries to rot.</p>
+        <div class="pill-row">
+          <span class="pill good">geolocation → demo.iot_telemetry</span>
+          <span class="pill good">email → demo.customers</span>
+          <span class="pill good">ssn → demo.member_eligibility</span>
+        </div>
+      </div>
+      <div class="stack">
+        <h4>Performance &amp; transparency</h4>
+        <p>
+          Iceberg list-tables: <b>12 s → 2 ms</b> warm (60 s TTL cache).<br/>
+          Quality-check results: bounded 8 s connect timeout + negative cache so failures don't replay.<br/>
+          Every LLM call logged as <code>[LLM CALL]</code> with the prompt + response.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer" style="margin-top: 18px;">
+    <span class="pill good">Backend ✓ 6 agents live</span>
+    <span class="pill good">Frontend ✓ Pipeline Builder UI shipped</span>
+    <span class="pill warn">Next ✓ Snowflake auth flow + UI for Quality Guardian thresholds</span>
+  </div>
+</section>
+
+</body>
+</html>

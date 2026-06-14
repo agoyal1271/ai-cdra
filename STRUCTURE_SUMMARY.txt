@@ -1,0 +1,317 @@
+================================================================================
+MAVENIR RCS → CMM-23.5 METADATA HIERARCHY
+================================================================================
+
+LAYER 1: MAVENIR REFERENCE GUIDE (v3.0)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+78 Performance Groups
+│
+├─ Alarm Performance Group
+├─ Average Overload Performance Group
+├─ AVGSYSPERF Performance Group
+├─ BILLING_CTXT_BASIC_OBJECT_TYPE Performance Group
+├─ BILLING_CTXT_NODE_TYPE Performance Group
+├─ BSSAP Performance Group
+├─ CAP Performance Group
+├─ CS_PEAKSYSTRANS Performance Group
+├─ DB_ADAPTER_CLIENT/MGR Performance Groups
+├─ LIX1, M3UA, MAP, MSRP, MTP3 Performance Groups
+├─ RMS Diameter Performance Group
+│  ├─ RMS-MSIM Performance Counters
+│  ├─ RMS-OMA RESTAPI Performance Counters
+│  ├─ RMS Message Count/Throughput Performance Groups
+│  ├─ RMS Archival Performance Group
+│  ├─ RMS INVITE Session Setup Time
+│  ├─ RMS mStore HTTP, VMS_SMPP, VMS Sync
+│  ├─ RMS SCSCF SIP Messaging
+│  ├─ RMS-REST Based Message Archival
+│  ├─ RMS-REG Subscriber Count
+│  ├─ RMS-CS Node, CDR, SOAP Performance Groups
+│  ├─ RMS Anti-Spam Check
+│  ├─ RMS_MMS, _GROUP, _INTERNAL_CAUSECODE, _LATENCY
+│  ├─ RMS_MSG_ACC_DLVRY_TIME, _MSG_SIZE, _PARTICIPANT_NUM
+│  ├─ RMS_SMS, _SESS_HOLDTIME
+│  ├─ New Anti-Spam Performance Group
+│  ├─ EEIR, PNB Check, Cloud Com Recording Interface
+│  ├─ mStore Based Groups (Store & Forward, Reg-Profile, GC-META, DR-Interworking)
+│  ├─ FWD Trigger and FWD Notification
+│  ├─ RMS SNF Forward Attempt
+│  ├─ Legacy IW Message Count
+│  ├─ RMS File Localization Trigger
+│  ├─ RMS SCSCF SIP, _PEAKSYSTRANS, _DNS, _MSRP
+│  └─ SPECIFIC_ALARM, SCCP, SMPP_BASIC, TCAP, WAS, HTTP Client Manager
+└─ Overload Performance Group
+   └─ PNS, Overload Manager, EEIR
+
+Rules & Standards: 3GPP TS 24.008, various RCS specs
+File Format: Flat files, periodic collection
+Storage Target: External system (flat files → data lake)
+
+
+LAYER 2: CMM-23.5 IMPLEMENTATION (EPS CPPS SPECIFIC)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A. COUNTER LIST (7,746 rows)
+   └─ Individual performance counters extracted from Mavenir
+      ├─ Example: M01C000 (SUCC_GPRS_ATTACH)
+      ├─ Example: M01C002 (SUCC_COMBINED_ATTACH)
+      └─ ... 7,743 more counters
+
+      Attributes per counter:
+      ├─ Counter ID (M01C000)
+      ├─ Name (SUCC_GPRS_ATTACH)
+      ├─ Measurement Group (M001 = GPRS Mobility Management)
+      ├─ Time Aggregation (sum, avg, max, min)
+      ├─ Object Aggregation (sum, avg)
+      ├─ Description (detailed business logic)
+      ├─ Scope (Raw view, Summary view)
+      ├─ Unit (Integer, percentage, etc.)
+      ├─ Standards Ref (*124, *149, etc.)
+      ├─ Release (CMM17.5M3 → CMM23.5)
+      ├─ Dependencies, Related Features
+      └─ Draft Status (Published, Draft)
+
+B. MEASUREMENT LIST (123 rows)
+   └─ Logical groupings of counters for operational monitoring
+      
+      Measurement Structure:
+      ├─ M101: EPS CPPS Authentication
+      │   ├─ Counters: ATT_AUTH_REQ_HSS, ATT_AUTH_REQ_UE, ...
+      │   ├─ Hierarchies: PLMN-CMM-VM, PLMN-CMU-CMM-VM, PLMN-CMMA-CMM-VM
+      │   ├─ Interval: 15 minutes
+      │   └─ Busy Hour: max(ATT_AUTH_REQ_HSS + ATT_AUTH_REQ_UE)
+      │
+      ├─ M102: EPS CPPS Authentication Per HSS
+      │   ├─ Counters: ATT_AUTH_REQ_HSS_HSS
+      │   ├─ Hierarchies: PLMN-CMM-VM-HSS (adds HSS dimension)
+      │   └─ Busy Hour: max(ATT_AUTH_REQ_HSS_HSS)
+      │
+      ├─ M103: EPS CPPS Bearer Session Management
+      │   ├─ Counters: ATT_CREATE_DFLT_BRR, ATT_DEL_DFLT_BRR, ATT_BRR_RES_MOD_REQ, ...
+      │   ├─ Hierarchies: PLMN-CMM-VM
+      │   └─ Busy Hour: max(sum of 6 bearer-related counters)
+      │
+      ├─ M104: EPS CPPS Bearer Session Management Per Oper Def QCI
+      │   ├─ Counters: Bearer counters filtered by QCI
+      │   ├─ Hierarchies: PLMN-CMM-VM-QCI (adds QCI/service-quality dimension)
+      │   └─ Busy Hour: max(NON3GPP_HO_DEL_DED_BRR_OD_QCI)
+      │
+      ├─ M105: EPS CPPS Capacity
+      ├─ M106: EPS CPPS Capacity Per PLMN
+      ├─ M107: EPS CPPS Communication
+      ├─ M108: EPS CPPS Connections
+      ├─ M109: EPS CPPS Connections Per PLMN
+      ├─ M110: EPS CPPS Dedicated Bearer
+      ├─ M111: EPS CPPS Dedicated Bearer Per Oper Def QCI
+      ├─ M112: EPS CPPS DNS
+      ├─ M113: EPS CPPS Gateway Reselection
+      ├─ M114: EPS CPPS Handover
+      ├─ M115: EPS CPPS Interface
+      ├─ M116: EPS CPPS Lawful Intercept
+      ├─ M117: EPS CPPS Location Based Services
+      ├─ M118: EPS CPPS Mobility Management
+      ├─ M119: EPS CPPS Mobility Management Per HSS
+      └─ ... 103 more measurements
+
+
+LAYER 3: HIERARCHY / AGGREGATION DIMENSIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Multi-level aggregation paths (drill-down/roll-up capability):
+
+PLMN (Public Land Mobile Network) — Top Level
+│
+├─ PLMN-CMM-VM (Basic 3-level hierarchy)
+│  ├─ Dimension 1: PLMN ID (network operator)
+│  ├─ Dimension 2: CMM ID (Cloud Mobility Manager / compute cluster)
+│  └─ Dimension 3: VM ID (Virtual Machine / instance)
+│
+├─ PLMN-CMU-CMM-VM (With CPPS Management Unit)
+│  ├─ Dimension 1: PLMN ID
+│  ├─ Dimension 2: CMU ID (CPPS Management Unit)
+│  ├─ Dimension 3: CMM ID
+│  └─ Dimension 4: VM ID
+│
+├─ PLMN-CMMA-CMM-VM (With CPPS Measurement Agent)
+│  ├─ Dimension 1: PLMN ID
+│  ├─ Dimension 2: CMMA ID (CPPS Measurement Agent)
+│  ├─ Dimension 3: CMM ID
+│  └─ Dimension 4: VM ID
+│
+├─ PLMN-CMM-VM-HSS (With Home Subscriber Server)
+│  ├─ Dimensions 1-3: As above
+│  └─ Dimension 4: HSS ID (subscriber database backend)
+│     Use case: Which HSS is bottleneck?
+│
+├─ PLMN-CMM-VM-CPLMN (With Served PLMN)
+│  ├─ Dimensions 1-3: As above
+│  └─ Dimension 4: CPLMN ID (Visited/Served PLMN)
+│     Use case: Roaming analysis per operator
+│
+├─ PLMN-CMM-VM-QCI (With Quality Class Indicator)
+│  ├─ Dimensions 1-3: As above
+│  └─ Dimension 4: QCI (Quality of Service class 1-9)
+│     Use case: Premium vs. standard service tracking
+│
+├─ PLMN-CMM-VM-RESLCT (With Reselection Attempt #)
+│  ├─ Dimensions 1-3: As above
+│  └─ Dimension 4: Reselection Attempt Number
+│     Use case: Gateway failover success rates
+│
+└─ PLMN-CMM-VM-QCI (and more exotic combinations)
+
+
+AGGREGATION MODEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Raw Events (Millions per hour)
+        ↓
+    Counters (sum, sum) — per VM, per 15 min
+        ↓ Aggregation: sum
+    Per-CMM (sum, avg) — across VMs
+        ↓ Aggregation: sum
+    Per-PLMN (sum, avg) — across CMMs
+        ↓ Drill-down dimensions
+    Per-HSS, Per-QCI, Per-CPLMN, Per-Reselection Attempt
+        ↓
+    Measurements (KPI formulas)
+        ↓
+    Storage (Iceberg → Snowflake/Databricks)
+
+
+COUNTER → MEASUREMENT RELATIONSHIP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Example: M103 (EPS CPPS Bearer Session Management)
+
+Counter Inputs:
+├─ ATT_CREATE_DFLT_BRR         (Default bearer creation attempts)
+├─ ATT_DEL_DFLT_BRR            (Default bearer deletion attempts)
+├─ ATT_BRR_RES_MOD_REQ         (Bearer resource modification requests)
+├─ ATT_MOD_ACC_BRR_REQ         (Access bearer modification requests)
+├─ ATT_MOD_BRR_REQ             (Bearer modification requests)
+└─ ATT_UPD_BRR_REQ             (Bearer update requests)
+
+Aggregation Logic:
+  M103 = sum(all 6 counters) per 15-min interval
+
+Busy Hour Definition:
+  Busy Hour = max(ATT_CREATE_DFLT_BRR + ATT_DEL_DFLT_BRR + ...)
+
+Output:
+  └─ M103 Value: 45,230 bearer operations in a 15-min window
+
+
+SUCCESS/FAILURE COUNTER PATTERNS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For each major procedure, counters follow:
+
+  SUCC_<PROCEDURE>
+  FAIL_<PROCEDURE>_DUE_<REASON>
+
+Examples:
+  ├─ SUCC_GPRS_ATTACH / FAIL_GPRS_ATTACH_DUE_MS_ERR
+  ├─ SUCC_GPRS_ATTACH / FAIL_GPRS_ATTACH_DUE_RADIO_ERR
+  ├─ SUCC_GPRS_ATTACH / FAIL_GPRS_ATTACH_DUE_SGSN_ERR
+  ├─ SUCC_GPRS_ATTACH / FAIL_GPRS_ATTACH_HLR_VLR_ERR
+  ├─ SUCC_GPRS_ATTACH / FAIL_GPRS_ATTACH_COLLISIONS
+  │
+  ├─ SUCC_COMBINED_ATTACH / FAIL_COMBINED_ATTACH
+  ├─ SUCC_IMSI_ATTACH / FAIL_IMSI_ATTACH
+  │
+  ├─ SUCC_INTRA_PAPS_RA_UPDATE / FAIL_INTRA_PAPS_RA_UPDATE
+  ├─ SUCC_INTER_PAPS_RA_UPDATE / FAIL_INTER_PAPS_RA_UPDATE
+  └─ ... (many more)
+
+Use case: Calculate success rate = SUCC / (SUCC + FAIL) per dimension
+
+
+VERSIONING / EVOLUTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Timeline:
+  CMM17.5M3 (Original Release) → CMM23.5 (Current, ~6-8 releases)
+
+Changes Tracked:
+  ├─ Original Release (when counter first appeared)
+  ├─ End Release (when counter deprecated, if applicable)
+  ├─ Draft Status (Published vs. Draft)
+  ├─ Definition Updates (logic changes)
+  └─ Related Features (dependencies)
+
+Example:
+  Counter M32C001:
+    Original Release: CMM17.5M3
+    Current Status: Published
+    Related Feature: RMS Message Archival v2.1
+    Dependencies: M32C000 (must be collected first)
+
+================================================================================
+DATA INTEGRATION PATTERNS
+================================================================================
+
+Ingestion Pipeline (Proposed):
+
+  Mavenir RCS Files (Kafka → 10M events/sec)
+              ↓
+  Bronze Layer (Flink/NiFi processing)
+              ↓
+  Raw Counters in Iceberg (7,746 counter types)
+              ↓
+  Silver Layer (Aggregation by hierarchy)
+  - Normalize dimensions (PLMN, CMM, VM, HSS, QCI)
+  - Apply time aggregation (15-min windows)
+  - Apply object aggregation (sum/avg/max)
+              ↓
+  Iceberg Silver Tables
+  - rcs_counters_raw (PLMN-CMM-VM-HSS-QCI)
+  - rcs_measurements (M101-M123 KPIs)
+              ↓
+  Gold Layer (KPI Calculations & Alerts)
+  - Daily rollups
+  - SLA comparisons
+  - Anomaly flags
+              ↓
+  Snowflake + Databricks (BI/ML)
+  - BI dashboards (TCO tracking, SLA dashboards)
+  - ML models (capacity forecasting, anomaly detection)
+              ↓
+  Autonomous Agents (MCP-based)
+  - SLA Monitor Agent
+  - Anomaly Detector Agent
+  - Capacity Planner Agent
+
+
+================================================================================
+KEY STATISTICS
+================================================================================
+
+Mavenir PDF:
+  - 332 pages
+  - 78+ Performance Groups
+  - Release: 11.2, v3.0
+  - Published: Dec 29, 2021
+
+CMM-23.5 File:
+  - 2 sheets
+  - 7,746 individual counters (Counter List)
+  - 123 operational measurements (Measurement List)
+  - 21 attributes per counter
+  - 17 attributes per measurement
+  - Release: 23.5 (latest)
+  - Status: ~95% Published, ~5% Draft
+
+Hierarchy Dimensions:
+  - 8-12 unique hierarchy patterns
+  - Maximum depth: 4-5 levels
+  - Aggregation functions: 4 (sum, avg, max, min)
+
+Collection:
+  - Frequency: 15 minutes (standard)
+  - Data type: Integer counts
+  - Update triggers: Event-driven (on procedure completion)
+  - Historical depth: Not specified (assumed 7-30 days raw, 1-3 years aggregated)
+
+================================================================================

@@ -1,0 +1,65 @@
+# Secrets — never commit
+.env
+*.keytab
+*.pem
+*.key
+*.p12
+*.jks
+*.pfx
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+*.pyc
+
+# Node / Frontend
+node_modules/
+03_frontend/dist/
+03_frontend/.vite/
+*.local
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Logs
+*.log
+/tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ChromaDB / vector store persisted data (local only)
+02_backend/memory/chroma_db/
+02_backend/memory/catalog_db/
+
+# Local DB caches & serialized state
+*.db
+*.sqlite3
+*.pkl
+
+# Decision logs (may contain runtime data)
+decisions/
+
+# Stray build artifacts
+02_backend/=*
+
+# Iceberg local warehouse (large binary files)
+iceberg-warehouse/

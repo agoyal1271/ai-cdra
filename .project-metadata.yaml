@@ -1,0 +1,34 @@
+name: Cloudera AI Agents
+description: Six autonomous AI agents for self-discovering, self-building, self-healing, and self-governing data pipelines on Cloudera Data Platform.
+author: Cloudera Field Engineering
+spec_version: "0.8"
+
+tasks:
+  - name: Install Dependencies
+    type: Session
+    script: 01_install/install.py
+    short_summary: Install Python and Node.js dependencies
+    kernel: python3
+
+  - name: Cloudera AI Agents
+    type: Application
+    script: launch.py
+    short_summary: Launch the multi-agent platform (FastAPI + React)
+    kernel: python3
+    environment_variables:
+      CLOUDERA_AI_URL: ""           # Set to your CAI inference endpoint
+      CLOUDERA_AI_MODEL: ""         # e.g. meta-llama/Meta-Llama-3-8B-Instruct
+      CLOUDERA_AI_KEY: ""           # Your CAI API key
+      KAFKA_BOOTSTRAP_SERVERS: ""   # e.g. broker1:9092,broker2:9092
+      KAFKA_SECURITY_PROTOCOL: "SASL_SSL"
+      KAFKA_SASL_MECHANISM: "PLAIN"
+      KAFKA_USERNAME: ""
+      KAFKA_PASSWORD: ""
+      ICEBERG_CATALOG_TYPE: "hive"
+      ICEBERG_CATALOG_URI: ""       # HMS URI e.g. thrift://hive-metastore:9083
+      ICEBERG_WAREHOUSE: ""         # e.g. s3a://your-bucket/warehouse
+      OZONE_ENDPOINT: ""            # e.g. http://ozone-s3g:9878
+      OZONE_ACCESS_KEY: ""
+      OZONE_SECRET_KEY: ""
+      HDFS_WEBHDFS_URL: ""          # e.g. http://namenode:9870
+      FLINK_REST_URL: ""            # e.g. http://flink-jobmanager:8081
