@@ -166,6 +166,15 @@ export async function askAsset(
   return res.json();
 }
 
+export async function fetchAssetLineage(
+  assetName: string,
+  assetType: 'iceberg_table' | 'kafka_topic',
+): Promise<import('../types/agents').OmLineage & { found: boolean }> {
+  const omType = assetType === 'kafka_topic' ? 'topic' : 'table';
+  const res = await fetch(`${BASE}/openmetadata/lineage?asset=${encodeURIComponent(assetName)}&asset_type=${omType}`);
+  return res.json();
+}
+
 export async function runAssetSQL(
   sql: string,
   engine: 'impala' | 'trino' | 'spark',

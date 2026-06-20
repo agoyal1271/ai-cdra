@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, RefreshCw, Code2, Play, Shield, ShieldCheck, Copy, ArrowLeft, FolderOpen, Database, Send } from 'lucide-react';
 import type { DiscoveredAsset, QualityCheckCode, QualityCheckResults } from '../../types/agents';
-import { generateQualityCheck, fetchQualityCheckResults, streamExecuteQualityCheck, askAsset, runAssetSQL } from '../../api/agents';
+import { generateQualityCheck, fetchQualityCheckResults, streamExecuteQualityCheck, askAsset, runAssetSQL, fetchAssetLineage } from '../../api/agents';
+import type { OmLineage } from '../../types/agents';
 import { TYPE_STYLES, TYPE_ICONS, QC_STATUS_CONFIG, getScoreColor, getScoreBarColor, getScoreLabel } from '../../constants/design';
 import { PipelineTab } from './PipelineTab';
 
@@ -136,6 +137,25 @@ export function AssetDetailPanel({
   const [qcFetchingInitial, setQcFetchingInitial] = useState(true);
   const [qcError, setQcError] = useState<QcError>(null);
   const [piiFields, setPiiFields] = useState<Array<{ name: string; type: string }>>([]);
+  // On-demand OpenMetadata lineage — fetched when the user opens the Lineage tab
+  const [lineage, setLineage] = useState<(OmLineage & { found: boolean }) | null>(null);
+  const [lineageLoading, setLineageLoading] = useState(false);
+
+  useEffect(() => {
+    // Reset lineage whenever the selected asset changes
+    setLineage(null);
+  }, [asset.id]);
+
+  useEffect(() => {
+    if (activeTab !== 'lineage' || lineage || lineageLoading) return;
+    let cancelled = false;
+    setLineageLoading(true);
+    fetchAssetLineage(asset.name, asset.asset_type === 'kafka_topic' ? 'kafka_topic' : 'iceberg_table')
+      .then(res => { if (!cancelled) setLineage(res); })
+      .catch(() => { if (!cancelled) setLineage({ found: false, entity: { id: '', name: asset.name, fqn: '', entity_type: 'table' }, upstream: [], downstream: [], edge_count: 0 }); })
+      .finally(() => { if (!cancelled) setLineageLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab, asset.id, asset.name, asset.asset_type, lineage, lineageLoading]);
   const qcAbortRef = useRef<(() => void) | null>(null);
 
   // Simple PII detection patterns - expanded to catch variations
@@ -416,7 +436,7 @@ export function AssetDetailPanel({
           { id: 'quality', label: 'Quality', badge: qcResults?.overall_score },
           ...(asset.asset_type === 'kafka_topic' ? [{ id: 'pipeline', label: 'Pipeline', badge: null }] : []),
           { id: 'access', label: 'Access', badge: piiFields.length > 0 ? '!' : null },
-          { id: 'lineage', label: 'Lineage', badge: asset.lineage ? (asset.lineage.upstream.length + asset.lineage.downstream.length) || null : null },
+          { id: 'lineage', label: 'Lineage', badge: lineage && lineage.found ? (lineage.upstream.length + lineage.downstream.length) || null : null },
         ].map(tab => (
           <button
             key={tab.id}
@@ -900,16 +920,21 @@ export function AssetDetailPanel({
 
         {activeTab === 'lineage' && (
           <div className="p-5">
-            {asset.lineage ? (
+            {lineageLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-6 h-6 border-2 border-agent-orange border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm text-agent-text-secondary">Retrieving lineage from OpenMetadata…</p>
+              </div>
+            ) : lineage && lineage.found ? (
               <div className="space-y-5">
                 {/* Upstream */}
-                {asset.lineage.upstream.length > 0 && (
+                {lineage.upstream.length > 0 && (
                   <div>
                     <div className="text-xs font-semibold text-agent-text-secondary uppercase tracking-wider mb-3">
-                      Upstream Sources ({asset.lineage.upstream.length})
+                      Upstream Sources ({lineage.upstream.length})
                     </div>
                     <div className="space-y-2">
-                      {asset.lineage.upstream.map((node, i) => (
+                      {lineage.upstream.map((node, i) => (
                         <div key={i} className="flex items-start gap-3 px-3 py-2.5 bg-blue-950/30 border border-blue-800/30 rounded-lg">
                           <div className="mt-0.5 w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
                           <div className="min-w-0">
@@ -933,13 +958,13 @@ export function AssetDetailPanel({
                 </div>
 
                 {/* Downstream */}
-                {asset.lineage.downstream.length > 0 && (
+                {lineage.downstream.length > 0 && (
                   <div>
                     <div className="text-xs font-semibold text-agent-text-secondary uppercase tracking-wider mb-3">
-                      Downstream Consumers ({asset.lineage.downstream.length})
+                      Downstream Consumers ({lineage.downstream.length})
                     </div>
                     <div className="space-y-2">
-                      {asset.lineage.downstream.map((node, i) => (
+                      {lineage.downstream.map((node, i) => (
                         <div key={i} className="flex items-start gap-3 px-3 py-2.5 bg-green-950/30 border border-green-800/30 rounded-lg">
                           <div className="mt-0.5 w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
                           <div className="min-w-0">
@@ -953,22 +978,22 @@ export function AssetDetailPanel({
                   </div>
                 )}
 
-                {asset.lineage.upstream.length === 0 && asset.lineage.downstream.length === 0 && (
+                {lineage.upstream.length === 0 && lineage.downstream.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <p className="text-sm text-agent-text-secondary">No lineage edges recorded</p>
-                    <p className="text-xs text-agent-text-secondary mt-1">OpenMetadata returned this asset but has no lineage for it yet</p>
+                    <p className="text-xs text-agent-text-secondary mt-1">OpenMetadata has this asset but no lineage for it yet</p>
                   </div>
                 )}
 
                 <div className="text-xs text-agent-text-secondary pt-2 border-t border-agent-dark-border">
-                  Source: OpenMetadata · {asset.lineage.edge_count} edge{asset.lineage.edge_count !== 1 ? 's' : ''} total
+                  Source: OpenMetadata · {lineage.edge_count} edge{lineage.edge_count !== 1 ? 's' : ''} total
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <p className="text-sm text-agent-text-secondary">Lineage not available</p>
                 <p className="text-xs text-agent-text-secondary mt-1">
-                  Asset was not found in OpenMetadata, or OpenMetadata is not reachable
+                  {asset.name} was not found in OpenMetadata, or OpenMetadata is not reachable
                 </p>
               </div>
             )}

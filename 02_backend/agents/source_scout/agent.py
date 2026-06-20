@@ -618,24 +618,6 @@ async def run_source_scout(goal: str, config: dict = None) -> AsyncGenerator[dic
         "ozone": ozone_count, "pii_flagged": pii_count,
     })
 
-    # Fetch OpenMetadata lineage for each discovered asset (fire-and-forget, non-blocking)
-    try:
-        from tools.openmetadata.client import health_check, get_lineage_by_name
-        if health_check():
-            for asset in all_assets_final:
-                name  = asset.get("name", "")
-                atype = "topic" if asset.get("asset_type") == "kafka_topic" else "table"
-                if not name:
-                    continue
-                lineage = await asyncio.to_thread(get_lineage_by_name, name, atype)
-                if lineage and (lineage.get("upstream") or lineage.get("downstream")):
-                    yield emit("lineage", asset=name, entity=lineage["entity"],
-                               upstream=lineage["upstream"], downstream=lineage["downstream"],
-                               edge_count=lineage["edge_count"])
-    except Exception as _le:
-        import logging
-        logging.getLogger(__name__).debug(f"[scout] OM lineage fetch skipped: {_le}")
-
 
 # ── LangGraph node wrapper ────────────────────────────────────────────────────
 
